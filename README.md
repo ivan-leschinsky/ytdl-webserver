@@ -28,7 +28,7 @@ docker run --name ytdl -d -p 3000:3000 algram/ytdl-webserver
 ```
 
 #### Advanced
-Build the docker image, create a directory to hold and access the downloaded videos on the host, and then start a container instance of the image.  
+Build the docker image, create a directory to hold and access the downloaded videos on the host, and then start a container instance of the image.
 ```
 docker build -t <your username>/ytdl-webserver .
 mkdir /tmp/videos
@@ -43,6 +43,15 @@ To start contributing you only have to run one command.
 npm run dev
 ```
 This will start webpack and a dev server on `localhost:8080`
+
+## Pushing
+
+```sh
+docker build -t <your username>/ytdl-webserver .
+docker images
+# find your created image ID
+docker tag NEW_ID_IS_HERE <your username>/ytdl-webserver:latest
+```
 
 ## License
 MIT

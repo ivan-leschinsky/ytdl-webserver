@@ -18,33 +18,40 @@ function download (url, options = {
   audioOnly: false
 }) {
   return new Promise((resolve, reject) => {
-    let format = 'mp4'
+    let extension = 'mp4'
+    let ydlFormat = 'best'
     if (options.audioOnly) {
-      format = 'mp3'
+      extension = 'mp3'
+      ydlFormat = '18'
     }
 
     // TODO Add proper support for options
     const video = youtubeDl(url,
       // Optional arguments passed to youtube-dl.
-      ['--format=18'],
-      // Additional options can be given for calling `child_process.execFile()`.
+      [`--format=${ydlFormat}`],
+
       { cwd: __dirname, maxBuffer: Infinity })
 
     // Will be called when the download starts.
     video.on('info', info => {
-      let filename = info._filename
-      filename = filename
-        .replace('.mp4', '')
-        .substring(0, filename.length - 16)
+      let filename = info._filename.replace('.mp4', '')
 
-      const filePath = path.join(options.path, `${filename}.${format}`)
+      if (options.audioOnly) {
+        filename = info.title
+      }
+
+      const fullDir = path.join(options.path, info.creator);
+
+      fs.mkdirSync(fullDir, { recursive: true });
+
+      const filePath = path.join(fullDir, `${filename}.${extension}`)
 
       exists(filePath, (doesExist) => {
         const videoObj = {
           name: filename,
           url,
           downloading: false,
-          format
+          format: extension
         }
 
         if (!doesExist) {
@@ -53,7 +60,7 @@ function download (url, options = {
             .on('end', () => {
               resolve(videoObj)
             })
-            .toFormat(format)
+            .toFormat(extension)
             .save(filePath)
         } else {
           resolve(videoObj)

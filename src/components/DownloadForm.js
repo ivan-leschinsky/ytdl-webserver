@@ -10,6 +10,7 @@ class DownloadForm extends Component {
     return (
       <form className='downloadForm' onSubmit={this.props.onSubmit}>
         <input className='downloadForm__input' type='text' />
+        <input type="checkbox" className='downloadForm__checkbox' title='Only MP3' />
         <button className='downloadForm__btn'>▶</button>
       </form>
     )

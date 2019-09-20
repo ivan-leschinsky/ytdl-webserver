@@ -20,4 +20,5 @@ RUN mkdir -p public/temp \
     && npm run build
 
 EXPOSE 3000
+VOLUME /home/app/public/temp
 CMD [ "npm", "start" ]

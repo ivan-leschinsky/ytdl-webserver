@@ -21,6 +21,15 @@
     }
   }
 
+  &__checkbox {
+    appearance: none;
+    flex: 0 1 20px;
+    font-size: 16px;
+    height: 20px;
+    margin-right: 10px;
+    padding: 10px;
+  }
+
   &__btn {
     @include makePanel();
     background-color: $accent_primary;
