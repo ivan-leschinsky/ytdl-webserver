@@ -1,7 +1,10 @@
 const path = require('path')
 const fs = require('fs')
 const ffmpeg = require('fluent-ffmpeg')
-const youtubeDl = require('@microlink/youtube-dl')
+const youtubeDl = require('youtube-dl')
+const { spawn } = require('child_process');
+
+const _ = require('lodash')
 
 function exists (filename, cb) {
   fs.access(filename, fs.F_OK, (err) => {
@@ -15,36 +18,45 @@ function exists (filename, cb) {
 
 function download (url, options = {
   path: 'downloads',
-  audioOnly: false
 }) {
   return new Promise((resolve, reject) => {
     let extension = 'mp4'
-    let ydlFormat = 'best'
-    if (options.audioOnly) {
-      extension = 'mp3'
-      ydlFormat = '18'
-    }
 
-    // TODO Add proper support for options
-    const video = youtubeDl(url,
-      // Optional arguments passed to youtube-dl.
-      [`--format=${ydlFormat}`],
+    youtubeDl.getInfo(url, ["-f best"], function(err, info) {
+      if (err) throw err
 
-      { cwd: __dirname, maxBuffer: Infinity })
+      console.log('id:', info.id)
+      console.log('title:', info.title)
 
-    // Will be called when the download starts.
-    video.on('info', info => {
-      let filename = info._filename.replace('.mp4', '')
-
-      if (options.audioOnly) {
-        filename = info.title
+      const onlyAudioFormats = _.filter(info.formats, (f) => f.vcodec === "none")
+      let audioFormat = _.find(onlyAudioFormats, f => f.ext === 'm4a')
+      if (!audioFormat) {
+        audioFormat = _.maxBy(_.filter(onlyAudioFormats, f => f.ext === 'webm'), 'format_id')
+        extension = 'mkv'
       }
 
-      const fullDir = path.join(options.path, info.creator);
+      const maxFPS = _.maxBy(info.formats, 'fps').fps;
+      let videos = _.filter(info.formats, f => f.fps === maxFPS && f.ext === 'mp4');
+      if (videos.length === 0) {
+        videos = _.filter(info.formats, f => f.fps === maxFPS && f.ext === 'webm');
+        extension = 'mkv'
+      }
+      const videoFormat = _.maxBy(videos, 'height')
+      console.log('format:', videoFormat.format)
+      console.log(`dimensions: ${videoFormat.width}x${videoFormat.height}`)
 
+      let filename = info._filename.replace('.mp4', '')
+
+      const fullDir = path.join(options.path, info.creator || info.uploader);
       fs.mkdirSync(fullDir, { recursive: true });
-
       const filePath = path.join(fullDir, `${filename}.${extension}`)
+
+      let ydlOptions =
+        ['-f', `${videoFormat.format_id}+${audioFormat.format_id}`, '--merge-output-format', extension, url]
+
+      console.log('Going to run:')
+      console.log(`${youtubeDl.getYtdlBinary()} ${ydlOptions}`)
+      console.log('-----------')
 
       exists(filePath, (doesExist) => {
         const videoObj = {
@@ -55,13 +67,19 @@ function download (url, options = {
         }
 
         if (!doesExist) {
-          // Convert to audio
-          ffmpeg({ source: video })
-            .on('end', () => {
-              resolve(videoObj)
-            })
-            .toFormat(extension)
-            .save(filePath)
+          const ydl = spawn(youtubeDl.getYtdlBinary(), ydlOptions, { cwd: fullDir, maxBuffer: Infinity });
+          ydl.stdout.on('data', (data) => {
+            console.log(`stdout: ${data}`);
+          });
+
+          ydl.stderr.on('data', (data) => {
+            console.error(`stderr: ${data}`);
+          });
+
+          ydl.on('close', (code) => {
+            console.log(`child process exited with code ${code}`);
+            resolve(videoObj);
+          });
         } else {
           resolve(videoObj)
         }

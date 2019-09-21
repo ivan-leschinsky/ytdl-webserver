@@ -22,13 +22,14 @@
   "dependencies": {
     "@hapi/hapi": "^18.3.1",
     "@hapi/inert": "^5.2.0",
-    "@microlink/youtube-dl": "^1.13.2",
     "extract-text-webpack-plugin": "^3.0.2",
     "fluent-ffmpeg": "^2.1.2",
+    "lodash": "^4.17.15",
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "validator": "^10.11.0"
+    "validator": "^10.11.0",
+    "youtube-dl": "^1.12.1"
   },
   "devDependencies": {
     "@babel/core": "^7.4.3",
